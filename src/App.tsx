@@ -4,10 +4,11 @@ import { Configuration, OpenAIApi } from 'openai'
 import openAIConfig from './env'
 
 const App = (): JSX.Element => {
-  const [caloriasDiarias, setCaloriasDiarias] = useState('1500')
-  const [restricaoAlimentar, setRestricaoAlimentar] = useState('')
-  const [duracaoDieta, setDuracaoDieta] = useState('1')
-  const [respostaApi, setRespostaApi] = useState('')
+  const [dailyCalories, setdailyCalories] = useState('1500')
+  const [foodRestriction, setFoodRestriction] = useState('')
+  const [dietDuration, setDietDuration] = useState('1')
+  const [response, setResponse] = useState('')
+  const [loader, setLoader] = useState(false)
 
   const configuration = new Configuration({
     apiKey: openAIConfig.apiKey
@@ -15,10 +16,11 @@ const App = (): JSX.Element => {
   const openAi = new OpenAIApi(configuration)
 
   const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    setLoader(true)
     event.preventDefault()
-    const question = (restricaoAlimentar === '')
-      ? `Quero uma lista de compras para ${duracaoDieta} dias, com o limite de ${caloriasDiarias} calorias diárias.`
-      : `Quero uma lista de compras para ${duracaoDieta} dias, com o limite de ${caloriasDiarias} calorias diárias, com as seguintes restrições: ${restricaoAlimentar}.`
+    const question = (foodRestriction === '')
+      ? `Quero uma lista de compras para ${dietDuration} dias, com o limite de ${dailyCalories} calorias diárias.`
+      : `Quero uma lista de compras para ${dietDuration} dias, com o limite de ${dailyCalories} calorias diárias, com as seguintes restrições: ${foodRestriction}.`
 
     try {
       const response = await openAi.createCompletion({
@@ -28,10 +30,12 @@ const App = (): JSX.Element => {
         n: 1
       })
 
-      setRespostaApi(response.data.choices[0].text ?? '')
+      setResponse(response.data.choices[0].text ?? '')
     } catch (error) {
-      console.error('Erro ao enviar o formulário', error)
+      console.error('Error to send question', error)
     }
+
+    setLoader(false)
   }
 
   return (
@@ -39,34 +43,33 @@ const App = (): JSX.Element => {
       <form onSubmit={handleSubmit}>
         <TextField
           label="Calorias Diárias"
-          value={caloriasDiarias}
-          onChange={(event) => setCaloriasDiarias(event.target.value)}
+          value={dailyCalories}
+          onChange={(event) => setdailyCalories(event.target.value)}
           fullWidth
           margin="normal"
           type="number"
         />
         <TextField
           label="Duração da Dieta (em dias)"
-          value={duracaoDieta}
-          onChange={(event) => setDuracaoDieta(event.target.value)}
+          value={dietDuration}
+          onChange={(event) => setDietDuration(event.target.value)}
           fullWidth
           margin="normal"
           type="number"
         />
         <TextField
           label="Restrição Alimentar"
-          value={restricaoAlimentar}
-          onChange={(event) => setRestricaoAlimentar(event.target.value)}
+          value={foodRestriction}
+          onChange={(event) => setFoodRestriction(event.target.value)}
           fullWidth
           margin="normal"
         />
-        <Button type="submit" variant="contained" color="primary" fullWidth>
+        <Button type="submit" variant="contained" color="primary" fullWidth disabled={loader}>
           Enviar
         </Button>
       </form>
       <div>
-        <h3>Resposta da API:</h3>
-        <pre>{respostaApi}</pre>
+        <pre>{response}</pre>
       </div>
     </Container>
   )
